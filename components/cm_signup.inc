@@ -99,7 +99,7 @@ function _webform_render_cm_signup($component, $value = NULL) {
     '#required' => $component['mandatory'],
     '#weight' => $component['weight'],
     '#description'   => _webform_filter_descriptions($component['extra']['description']),
-    '#default_value' => $component['value'],
+    '#default_value' => ($value != NULL) ? $value[0] : 0,
     '#prefix' => '<div class="webform-component-' . $component['type'] . '" id="webform-component-' . $component['form_key'] . '">',
     '#suffix' => '</div>',
   );
@@ -153,8 +153,9 @@ function _cm_webform_get_lists($lid = NULL) {
     }
   }
   
-  if ($lid != NULL)
+  if ($lid != NULL) {
     return $lists[$lid];
+  }
   
   return $lists;
 }
