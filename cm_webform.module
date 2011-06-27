@@ -1,0 +1,109 @@
+<?php
+/**
+ * @file
+ * Integrate with Campaign Monitor to create new subscribers via webform
+ */
+
+
+require_once libraries_get_path('createsend-php') . '/csrest_subscribers.php';
+
+/**
+ * Implements hook_menu() to get the config page listed
+ */
+function cm_webform_menu() {
+  $items = array();
+
+  $items['admin/settings/cm'] = array(
+    'title' => 'Campaign Monitor settings',
+    'description' => 'Set up Campaign Monitor Webform integration.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cm_webform_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'cm_webform.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements of hook_webform_component_info().
+ */
+function cm_webform_webform_component_info() {
+  $components = array();
+
+  $components['cm_signup'] = array(
+    'label' => t('Campaign Monitor list signup'),
+    'description' => t('Checkboxes for signing up to selected lists'),
+    'features' => array(
+      'csv' => TRUE,
+      'email' => TRUE,
+      'email_address' => FALSE,
+      'email_name' => FALSE,
+      'required' => TRUE,
+      'conditional' => TRUE,
+      'group' => FALSE,
+      'attachment' => FALSE,
+    ),
+    'file' => 'components/cm_signup.inc',
+  );
+
+  return $components;
+}
+
+/**
+ * Implementation of hook_webform_submission_insert().
+ */
+function cm_webform_webform_submission_insert($node, $submission) {
+  $cm = new CS_REST_Subscribers('', variable_get('cm_apikey', ''), 'https');
+  
+  foreach ($node->webform['components'] as $cid => $component) {
+    if ($component['type'] == 'cm_signup') {
+      // Extract submitted values
+      $list = $component['extra']['lists'];
+      if ($submission->data[$cid]['value'][0] != 1) {
+        return;
+      }
+
+      // Field containing emails is based on the component configuration
+      $email = $submission->data[$component['extra']['email_field']]['value'][0];
+      
+      if (!empty($submission->data[$component['extra']['name_field']]['value'])) {
+        $name = $submission->data[$component['extra']['name_field']]['value'][0];
+      }
+      else {
+        $name = '';
+      }
+      
+      $fields = array();
+      $custom_fields = array_keys(array_filter($component['extra']['custom_fields']));
+      foreach ($custom_fields as $field) {
+        $fields[] = array('Key' => $node->webform['components'][$field]['form_key'],
+                          'Value' => $submission->data[$field]['value'][0]);
+      }
+      
+      // Subscribe the entered email to the selected list
+      $cm->set_list_id($list);
+      $cm->add(array('EmailAddress' => $email,
+                     'Name' => $name,
+                     'Resubscribe' => FALSE,
+                     'CustomFields' => $fields));
+    }
+  }
+}
+
+/**
+ * Implementation of hook_webform_submission_update().
+ */
+function cm_webform_webform_submission_update($node, $submission) {
+  //For now we do nothing
+  //Consider updating the list subscription if possible
+}
+
+/**
+ * Implementation of hook_webform_submission_delete().
+ */
+function cm_webform_webform_submission_delete($node, $submission) {
+  //For now we do nothing
+  //Consider deleting the list subscription if possible
+}

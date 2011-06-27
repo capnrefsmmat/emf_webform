@@ -3,7 +3,7 @@
 /**
  * Implementation of _webform_defaults_component().
  */
-function _webform_defaults_emf_signup() {
+function _webform_defaults_cm_signup() {
   return array(
     'name' => '',
     'form_key' => NULL,
@@ -21,27 +21,28 @@ function _webform_defaults_emf_signup() {
 /**
  * Implementation of _webform_edit_component().
  */
-function _webform_edit_emf_signup($component) {
+function _webform_edit_cm_signup($component) {
   $form = array();
 
   $lists = array();
-  foreach (emf_db_get_lists(TRUE) as $lid => $list) {
-    $lists[$lid] = sprintf('%s (%d: %s)', $list->name_action_clean, $lid, $list->name_clean);
+  foreach (_cm_webform_get_lists() as $lid => $list) {
+    $lists[$lid] = sprintf('%s (ID: %s)', $list, $lid);
   }
+  
   $form['extra']['lists'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Lists'),
+    '#type' => 'radios',
+    '#title' => t('List'),
     '#options' => $lists,
     '#default_value' => $component['extra']['lists'],
-    '#description' => t('Select the lists submitters should be able to sign up for. Not selecting any lists allows for signup for all lists.'),
+    '#description' => t('Select the list submitters should be able to sign up for.'),
     '#weight' => 0,
-    '#required' => FALSE,
+    '#required' => TRUE,
   );
   
   $email_fields = array();
   $name_fields = array();
   $other_fields = array();
-  $result = db_query('SELECT cid, form_key, name, type FROM {webform_component} WHERE type <> "emf_signup" AND nid = %d ORDER BY weight, name', $component['nid']);
+  $result = db_query('SELECT cid, form_key, name, type FROM {webform_component} WHERE type <> "cm_signup" AND nid = %d ORDER BY weight, name', $component['nid']);
   while ($c = db_fetch_array($result)) {
     if ($c['type'] == 'email') {
       $email_fields[$c['cid']] = sprintf('%s (%s)', $c['name'], $c['form_key']);
@@ -91,23 +92,14 @@ function _webform_edit_emf_signup($component) {
 /**
  * Implementation of _webform_render_component().
  */
-function _webform_render_emf_signup($component, $value = NULL) {
-  $lists = array();
-  foreach ($component['extra']['lists'] as $lid => $selected) {
-    if ($selected &&
-        $list = _emf_webform_get_list($lid)) {
-      $lists[$lid] = $list->name_action_clean;
-    }
-  }
-  
+function _webform_render_cm_signup($component, $value = NULL) {
   $form_item = array(
-    '#type' => 'checkboxes',
-    '#options' => $lists,
+    '#type' => 'checkbox',
     '#title' => ($component['extra']['title_display'] == 'none') ? NULL : $component['name'],
     '#required' => $component['mandatory'],
     '#weight' => $component['weight'],
     '#description'   => _webform_filter_descriptions($component['extra']['description']),
-    '#default_value' => array($component['value']),
+    '#default_value' => $component['value'],
     '#prefix' => '<div class="webform-component-' . $component['type'] . '" id="webform-component-' . $component['form_key'] . '">',
     '#suffix' => '</div>',
   );
@@ -116,82 +108,53 @@ function _webform_render_emf_signup($component, $value = NULL) {
 }
 
 /**
- * Implementation of _webform_theme_component().
- */
-function _webform_theme_emf_signup() {
-  return array(
-    'webform_display_emf_signup' => array(
-      'arguments' => array('element' => NULL),
-    ),
-  );
-}
-
-/**
  * Implementation of _webform_submit_component().
  */
-function _webform_submit_emf_signup($component, $value) {
-  return array_values(array_filter($value));
+function _webform_submit_cm_signup($component, $value) {
+  return $value;
 }
 
 
 /**
  * Implementation of _webform_display_component().
  */
-function _webform_display_emf_signup($component, $value, $format = 'html') {
+function _webform_display_cm_signup($component, $value, $format = 'html') {
   return array(
     '#title' => $component['name'],
     '#weight' => $component['weight'],
-    '#theme' => 'webform_display_emf_signup',
     '#theme_wrappers' => $format == 'html' ? array('webform_element', 'webform_element_wrapper') : array('webform_element_text'),
     '#post_render' => array('webform_element_wrapper'),
     '#format' => $format,
-    '#value' => (array) $value,
+    '#value' =>  ($value[0] == 1) ? t('Subscribed') : t('Not subscribed'),
     '#webform_component' => $component,
   );
-  
 }
 
-function theme_webform_display_emf_signup($element) {
-  $component = $element['#webform_component'];
+
+function _webform_table_cm_signup($component, $value) {
+  return ($value[0] == '1') ? t('Subscribed') : t('Not subscribed');
+}
+
+/**
+ * Either (a) get all lists or (b) get a specific list.
+ *
+ * @return array listID => list name array
+ */
+function _cm_webform_get_lists($lid = NULL) {
+  static $lists = array();
   
-  //Get the readable names for the lists
-  $items = array_map('_emf_webform_get_list', $element['#value']);
-  foreach ($items as &$i) {
-    $i = $i->name_clean;
-  }
+  if (empty($lists)) {
+    require_once libraries_get_path('createsend-php') . '/csrest_clients.php';
+    $cm = new CS_REST_Clients(variable_get('cm_clientid', ''), variable_get('cm_apikey', ''), 'https');
+    $ll = $cm->get_lists();
   
-  if ($element['#format'] == 'html') {
-    $output = count($items) > 1 ? theme('item_list', $items) : (isset($items[0]) ? $items[0] : ' ');
-  }
-  else {
-    if (count($items) > 1) {
-      foreach ($items as $key => $item) {
-        $items[$key] = ' - ' . $item;
-      }
-      $output = implode("\n", $items);
-    }
-    else {
-      $output = isset($items[0]) ? $items[0] : ' ';
+    foreach ($ll->response as $l) {
+      $lists[$l->ListID] = $l->Name;
     }
   }
-
-  return $output;
-}
-
-function _webform_table_emf_signup($component, $value) {
-  $value = array_map('_emf_webform_get_list', $value);
-  foreach ($value as &$v) {
-    $v = $v->name_clean;
-  }
-  return implode(', ', $value);
-}
-
-function _emf_webform_get_list($lid) {
-  static $lists;
   
-  if (!isset($lists)) {
-    $lists = emf_db_get_lists();
-  }
+  if ($lid != NULL)
+    return $lists[$lid];
   
-  return $lists[$lid];
+  return $lists;
 }
