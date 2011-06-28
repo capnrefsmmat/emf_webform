@@ -2,6 +2,8 @@
 /**
  * @file
  * Integrate with Campaign Monitor to create new subscribers via webform
+ *
+ * @todo make error logging specify which list and which form were used
  */
 
 
@@ -53,6 +55,15 @@ function cm_webform_webform_component_info() {
 
 /**
  * Implementation of hook_webform_submission_presave().
+ *
+ * There's three possibilities here:
+ *  1. The user is filling out the webform for the first time and is creating a new subscription.
+ *  2. The user is registered and using Webform's submission editing feature to update the subscription.
+ *  3. The user is unregistered and using our multi-page webform hack to update the subscription.
+ *     This won't update the saved Webform submission.
+ *
+ *  This system also supports subscribing to multiple mailing lists by adding multiple cm_signup
+ *  components to the webform.
  */
 function cm_webform_webform_submission_presave($node, $submission) {
   $cm = new CS_REST_Subscribers('', variable_get('cm_apikey', ''), 'https');
@@ -63,7 +74,7 @@ function cm_webform_webform_submission_presave($node, $submission) {
       $list = $component['extra']['lists'];
       $cm->set_list_id($list);
       
-      // Field containing emails is based on the component configuration
+      // Field containing email address is based on the component configuration
       $email = $submission->data[$component['extra']['email_field']]['value'][0];
       
       if (!empty($submission->data[$component['extra']['name_field']]['value'])) {
@@ -79,15 +90,25 @@ function cm_webform_webform_submission_presave($node, $submission) {
         $fields[] = array('Key' => $node->webform['components'][$field]['form_key'],
                           'Value' => $submission->data[$field]['value'][0]);
       }
+      
+      $wantsToSubscribe = ($submission->data[$cid]['value'][0] == 1);
 
       $r = db_fetch_array(db_query("SELECT `data` FROM {webform_submitted_data} WHERE sid = %d AND cid = %d",
                                    $submission->sid, $component['extra']['email_field']));
       
-      // If a previous form submission exists, we update it rather than adding a new subscriber
-      if ($r !== FALSE) {
-        cm_webform_update_subscription($cm, $submission, $cid, $r['data'], $email, $name, $fields);
+      $original_email = ($r !== FALSE) ? $r['data'] : $email;
+      
+      // They may have not checked "subscribe" the first time around but want to subscribe now.
+      if (cm_webform_is_subscribed($cm, $original_email)) {
+        // Check if they even want to subscribe. If they don't, unsubscribe them if necessary
+        if (!$wantsToSubscribe) {
+          cm_webform_unsubscribe($cm, $original_email);
+        }
+        else {
+          cm_webform_update_subscription($cm, $email, $original_email, $name, $fields);
+        }
       }
-      else {
+      elseif ($wantsToSubscribe) {
         cm_webform_insert_subscription($cm, $email, $name, $fields);
       }
     }
@@ -105,31 +126,29 @@ function cm_webform_insert_subscription(&$cm, $email, $name, $fields) {
   
   if (!$r->was_successful()) {
     watchdog('cm_webform', 'A Campaign Monitor @code error occurred when subscribing @email: @error',
-                                 array('@email' => $email, '@error' => $r->response->Message,
-                                       '@code' => $r->http_status_code), WATCHDOG_ERROR);
+             array('@email' => $email, '@error' => $r->response->Message,
+                   '@code' => $r->http_status_code), WATCHDOG_ERROR);
+  }
+  else {
+    watchdog('cm_webform', 'Email @email has been subscribed via Campaign Monitor.',
+             array('@email' => $email), WATCHDOG_INFO);
   }
 }
 
 /**
- * Helper function to update a pre-existing subscription.
+ * Checks a given email to see if it was subscribed in Campaign Monitor.
+ *
+ * @return boolean TRUE if previously subscribed, FALSE if not (or in case of CM error)
  */
-function cm_webform_update_subscription(&$cm, &$submission, $cid, $original_email, $email, $name, $fields) {
-  if ($submission->data[$cid]['value'][0] != 1) {
-    // They've not checked the "Subscribe" checkbox; if they were previously subscribed, unsubscribe them.
-    $r = db_fetch_array(db_query("SELECT `data` FROM {webform_submitted_data} WHERE sid = %d AND cid = %d",
-                                 $submission->sid, $cid));
-    
-    if ($r['data'] == '1') {
-      $r = $cm->unsubscribe($original_email);
-      if (!$r->was_successful()) {
-        watchdog('cm_webform', 'A Campaign Monitor @code error occurred when unsubscribing @email: @error',
-                                 array('@email' => $original_email, '@error' => $r->response->Message,
-                                       '@code' => $r->http_status_code), WATCHDOG_ERROR);
-      }
-    }
-    return;
-  }
-  
+function cm_webform_is_subscribed(&$cm, $email) {
+  $r = $cm->get($email);
+  return ($r->was_successful());
+}
+
+/**
+ * Helper function to update a subscription in Campaign Monitor.
+ */
+function cm_webform_update_subscription(&$cm, $email, $original_email, $name, $fields) {
   // Update the selected subscription
   $r = $cm->update($original_email, array('EmailAddress' => $email,
                                           'Name' => $name,
@@ -141,6 +160,26 @@ function cm_webform_update_subscription(&$cm, &$submission, $cid, $original_emai
                              array('@email' => $original_email, '@error' => $r->response->Message,
                                    '@code' => $r->http_status_code), WATCHDOG_ERROR);
   }
+  else {
+    watchdog('cm_webform', 'Email @email has had its subscription updated via Campaign Monitor.',
+             array('@email' => $original_email), WATCHDOG_NOTICE);
+  }
+}
+
+/**
+ * Helper function to unsubscribe a user through Campaign Monitor.
+ */
+function cm_webform_unsubscribe(&$cm, $email) {
+  $r = $cm->unsubscribe($email);
+  if (!$r->was_successful()) {
+    watchdog('cm_webform', 'A Campaign Monitor @code error occurred when unsubscribing @email: @error',
+                             array('@email' => $email, '@error' => $r->response->Message,
+                                   '@code' => $r->http_status_code), WATCHDOG_ERROR);
+  }
+  else {
+    watchdog('cm_webform', 'Email @email has been unsubscribed via Campaign Monitor.',
+             array('@email' => $email), WATCHDOG_INFO);
+  }
 }
 
 /**
@@ -149,4 +188,59 @@ function cm_webform_update_subscription(&$cm, &$submission, $cid, $original_emai
 function cm_webform_webform_submission_delete($node, $submission) {
   //For now we do nothing
   //Consider deleting the list subscription if possible
+}
+
+/**
+ * Implements hook_form_alter() to intercept multi-page webforms which have a cm_submit field.
+ * If the email field is filled out already, we can fill in the form with the subscriber info.
+ *
+ * @todo Support editing multiple list subscriptions -- i.e. don't error out if we're not subscribed
+ * to only one of the lists. If subscribed to _any_ of the lists, let the update happen, using the fields
+ * from that list.
+ */
+function cm_webform_form_alter($form, &$form_state, $form_id) {
+  if (isset($form_state['webform']) && !empty($form_state['post'])) {
+    foreach($form_state['webform']['component_tree']['children'] as $cid => $component) {
+      if ($component['type'] == 'cm_signup') {
+        
+        // Check that we're not on the last page of the form.
+        if (isset($form_state['post']['submitted'][$component['form_key']])) {
+          return;
+        }
+        
+        // Fetch the email address POSTed to us, if it exists
+        if (isset($form_state['post']['submitted'][$form_state['webform']['component_tree']['children'][$component['extra']['email_field']]['form_key']])) {
+          $email = $form_state['post']['submitted'][$form_state['webform']['component_tree']['children'][$component['extra']['email_field']]['form_key']];
+          
+          // Now fetch the old subscriber info and dump it into the fields here.
+          $cm = new CS_REST_Subscribers($component['extra']['lists'], variable_get('cm_apikey', ''), 'https');
+          $r =$cm->get($email);
+          
+          if (!$r->was_successful()) {
+            form_set_error($component['extra']['email_field'], t('The email address you entered is not subscribed to this mailing list.'));
+            return;
+          }
+          
+          $fields = array();
+          foreach($r->response->CustomFields as $field) {
+            $fields[$field->Key] = $field->Value;
+          }
+
+          $form_state['webform']['component_tree']['children'][$component['extra']['name_field']]['value'] = $r->response->Name;
+          $custom_fields = array_filter($component['extra']['custom_fields']);
+          
+          // Iterate through user-editable fields, find their matches in $fields, and fill in the data
+          foreach ($custom_fields as $fid => $foo) {
+            if (isset($fields[$form_state['webform']['component_tree']['children'][$fid]['form_key']])) {
+              $form_state['webform']['component_tree']['children'][$fid]['value'] =
+                $fields[$form_state['webform']['component_tree']['children'][$fid]['form_key']];
+            }
+          }
+          
+          // @TODO: make the form render code respect this
+          //$form_state['webform']['component_tree']['children'][$cid]['value'] = '1';
+        }
+      }
+    }
+  }
 }
