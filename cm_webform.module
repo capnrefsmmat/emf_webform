@@ -328,7 +328,10 @@ function cm_webform_help($path, $arg) {
       
       $h .= '<p>' . t('That\'s it! When a list subscriber enters their email address on the first page of the form and proceeds to the next page, it will automatically be filled in with their information from Campaign Monitor. When they change details or uncheck the "subscribe" checkbox, the updates will be synced with Campaign Monitor automatically. If you add multiple list signup fields, their subscriptions to multiple mailing lists can be edited simultaneously!') . '</p>';
       $h .= '<p>' . t('You might choose to link to this page from your email campaigns, so users can edit their information directly from your site, rather than unsubscribing through a Campaign Monitor branded form.') . '</p>';
-      
+      break;
+    
+    case 'node/%/webform':
+      $h .= '<p>' . t('If you\'d like this form\'s results to be sent to Campaign Monitor for list subscription information, make sure it has a "Campaign Monitor list signup" field.') . '</p>';
       break;
   }
   
