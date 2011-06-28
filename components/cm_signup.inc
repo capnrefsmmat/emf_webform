@@ -99,7 +99,7 @@ function _webform_render_cm_signup($component, $value = NULL) {
     '#required' => $component['mandatory'],
     '#weight' => $component['weight'],
     '#description'   => _webform_filter_descriptions($component['extra']['description']),
-    '#default_value' => ($value != NULL) ? $value[0] : 0,
+    '#default_value' => isset($value) ? $value[0] : $component['value'],
     '#prefix' => '<div class="webform-component-' . $component['type'] . '" id="webform-component-' . $component['form_key'] . '">',
     '#suffix' => '</div>',
   );

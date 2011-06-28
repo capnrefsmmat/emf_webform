@@ -255,8 +255,7 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
             }
           }
           
-          // @TODO: make the form render code respect this
-          //$form_state['webform']['component_tree']['children'][$cid]['value'] = '1';
+          $form_state['webform']['component_tree']['children'][$cid]['value'] = '1';
         }
       }
     }
