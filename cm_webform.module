@@ -185,24 +185,37 @@ function cm_webform_unsubscribe(&$cm, $lid, $email) {
 
 /**
  * Implementation of hook_webform_submission_delete().
- *
- * @todo delete the list subscription along with the webform
  */
 function cm_webform_webform_submission_delete($node, $submission) {
-  //For now we do nothing
-  //Consider deleting the list subscription if possible
+  $cm = new CS_REST_Subscribers('', variable_get('cm_apikey', ''), 'https');
+  
+  foreach ($node->webform['components'] as $cid => $component) {
+    if ($component['type'] == 'cm_signup') {
+      // Extract submitted values
+      $list = $component['extra']['lists'];
+      $cm->set_list_id($list);
+      
+      // Field containing email address is based on the component configuration
+      $email = $submission->data[$component['extra']['email_field']]['value'][0];
+      
+      if (cm_webform_is_subscribed($email)) {
+        cm_webform_unsubscribe($cm, $list, $email);
+      }
+    }
+  }
 }
 
 /**
  * Implements hook_form_alter() to intercept multi-page webforms which have a cm_submit field.
  * If the email field is filled out already, we can fill in the form with the subscriber info.
  *
- * @todo Support editing multiple list subscriptions -- i.e. don't error out if we're not subscribed
- * to only one of the lists. If subscribed to _any_ of the lists, let the update happen, using the fields
- * from that list.
+ * Supports multiple subscription editing. Add multiple cm_signup fields, one for each list,
+ * and select the custom fields for that list. This will load the fields for each as long as the
+ * user is subscribed to all of them.
  */
 function cm_webform_form_alter($form, &$form_state, $form_id) {
   if (isset($form_state['webform']) && !empty($form_state['post'])) {
+    $emailFound = FALSE;
     foreach($form_state['webform']['component_tree']['children'] as $cid => $component) {
       if ($component['type'] == 'cm_signup') {
         
@@ -219,10 +232,12 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
           $cm = new CS_REST_Subscribers($component['extra']['lists'], variable_get('cm_apikey', ''), 'https');
           $r =$cm->get($email);
           
+          // If they're not subscribed to this list, skip to the next
           if (!$r->was_successful()) {
-            form_set_error($component['extra']['email_field'], t('The email address you entered is not subscribed to this mailing list.'));
-            return;
+            continue;
           }
+          
+          $emailFound = TRUE;
           
           $fields = array();
           foreach($r->response->CustomFields as $field) {
@@ -244,6 +259,10 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
           //$form_state['webform']['component_tree']['children'][$cid]['value'] = '1';
         }
       }
+    }
+    
+    if (!$emailFound) {
+      form_set_error($component['extra']['email_field'], t('The email address you entered is not subscribed to this mailing list.'));
     }
   }
 }
