@@ -33,7 +33,7 @@ function _webform_edit_cm_signup($component) {
     '#type' => 'radios',
     '#title' => t('List'),
     '#options' => $lists,
-    '#default_value' => $component['extra']['lists'],
+    '#default_value' => !empty($component['extra']['lists']) ? $component['extra']['lists'] : '',
     '#description' => t('Select the list submitters should be able to sign up for.'),
     '#weight' => 0,
     '#required' => TRUE,
