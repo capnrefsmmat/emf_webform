@@ -219,7 +219,7 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
     foreach($form_state['webform']['component_tree']['children'] as $cid => $component) {
       if ($component['type'] == 'cm_signup') {
         
-        // Check that we're not on the last page of the form.
+        // Check that the complete form hasn't been submitted.
         if (isset($form_state['post']['submitted'][$component['form_key']])) {
           return;
         }
@@ -230,7 +230,7 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
           
           // Now fetch the old subscriber info and dump it into the fields here.
           $cm = new CS_REST_Subscribers($component['extra']['lists'], variable_get('cm_apikey', ''), 'https');
-          $r =$cm->get($email);
+          $r = $cm->get($email);
           
           // If they're not subscribed to this list, skip to the next
           if (!$r->was_successful()) {
