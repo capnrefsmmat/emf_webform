@@ -25,7 +25,7 @@ function _webform_edit_cm_signup($component) {
   $form = array();
 
   $lists = array();
-  foreach (_cm_webform_get_lists() as $lid => $list) {
+  foreach (cm_webform_get_lists() as $lid => $list) {
     $lists[$lid] = sprintf('%s (ID: %s)', $list, $lid);
   }
   
@@ -133,29 +133,4 @@ function _webform_display_cm_signup($component, $value, $format = 'html') {
 
 function _webform_table_cm_signup($component, $value) {
   return ($value[0] == '1') ? t('Subscribed') : t('Not subscribed');
-}
-
-/**
- * Either (a) get all lists or (b) get a specific list.
- *
- * @return array listID => list name array
- */
-function _cm_webform_get_lists($lid = NULL) {
-  static $lists = array();
-  
-  if (empty($lists)) {
-    require_once libraries_get_path('createsend-php') . '/csrest_clients.php';
-    $cm = new CS_REST_Clients(variable_get('cm_clientid', ''), variable_get('cm_apikey', ''), 'https');
-    $ll = $cm->get_lists();
-  
-    foreach ($ll->response as $l) {
-      $lists[$l->ListID] = $l->Name;
-    }
-  }
-  
-  if ($lid != NULL) {
-    return $lists[$lid];
-  }
-  
-  return $lists;
 }
