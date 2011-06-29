@@ -95,19 +95,44 @@ function cm_webform_webform_submission_presave($node, $submission) {
       
       $original_email = ($r !== FALSE) ? $r['data'] : $email;
       $wantsToSubscribe = ($submission->data[$cid]['value'][0] == 1);
+      $listName = cm_webform_get_lists($list);
       
       // They may have not checked "subscribe" the first time around but want to subscribe now.
       if (cm_webform_is_subscribed($cm, $original_email)) {
         // Check if they even want to subscribe. If they don't, unsubscribe them if necessary
         if ($wantsToSubscribe) {
-          cm_webform_update_subscription($cm, $list, $email, $original_email, $name, $fields);
+          $r = cm_webform_update_subscription($cm, $list, $email, $original_email, $name, $fields);
+          if ($r) {
+            drupal_set_message(t('Your subscription to the list "@list" has been successfully updated.',
+                                 array('@list' => $listName)), 'status');
+          }
+          else {
+            drupal_set_message(t('An error occurred when updating your subscription to "@list". Please try again.',
+                                 array('@list' => $listName)), 'error');
+          }
         }
         else {
-          cm_webform_unsubscribe($cm, $list, $original_email);
+          $r = cm_webform_unsubscribe($cm, $list, $original_email);
+          if ($r) {
+            drupal_set_message(t('You have been successfully unsubscribed from the list "@list".',
+                                 array('@list' => $listName)), 'status');
+          }
+          else {
+            drupal_set_message(t('An error occurred when trying to unsubscribe you from the list "@list". Please try again.',
+                                 array('@list' => $listName)), 'error');
+          }
         }
       }
       elseif ($wantsToSubscribe) {
-        cm_webform_insert_subscription($cm, $list, $email, $name, $fields);
+        $r = cm_webform_insert_subscription($cm, $list, $email, $name, $fields);
+        if ($r) {
+          drupal_set_message(t('You have been successfully subscribed to the list "@list".',
+                               array('@list' => $listName)), 'status');
+        }
+        else {
+          drupal_set_message(t('An error occurred when subscribing you to the list "@list". Please try again.',
+                               array('@list' => $listName)), 'error');
+        }
       }
     }
   }
@@ -127,11 +152,12 @@ function cm_webform_insert_subscription(&$cm, $lid, $email, $name, $fields) {
              array('@email' => $email, '@error' => $r->response->Message,
                    '@code' => $r->http_status_code, '@list' => cm_webform_get_lists($lid)),
              WATCHDOG_ERROR);
+    return FALSE;
   }
-  else {
-    watchdog('cm_webform', 'Email @email has been subscribed to list "@list" via Campaign Monitor.',
-             array('@email' => $email, '@list' => cm_webform_get_lists($lid)), WATCHDOG_INFO);
-  }
+  
+  watchdog('cm_webform', 'Email @email has been subscribed to list "@list" via Campaign Monitor.',
+           array('@email' => $email, '@list' => cm_webform_get_lists($lid)), WATCHDOG_INFO);
+  return TRUE;
 }
 
 /**
@@ -164,11 +190,12 @@ function cm_webform_update_subscription(&$cm, $lid, $email, $original_email, $na
                              array('@email' => $original_email, '@error' => $r->response->Message,
                                    '@code' => $r->http_status_code, '@list' => cm_webform_get_lists($lid)),
              WATCHDOG_ERROR);
+    return FALSE;
   }
-  else {
-    watchdog('cm_webform', 'Email @email has had its subscription to list "@list" updated via Campaign Monitor.',
-             array('@email' => $original_email, '@list' => cm_webform_get_lists($lid)), WATCHDOG_NOTICE);
-  }
+  
+  watchdog('cm_webform', 'Email @email has had its subscription to list "@list" updated via Campaign Monitor.',
+           array('@email' => $original_email, '@list' => cm_webform_get_lists($lid)), WATCHDOG_NOTICE);
+  return TRUE;
 }
 
 /**
@@ -181,11 +208,12 @@ function cm_webform_unsubscribe(&$cm, $lid, $email) {
                              array('@email' => $email, '@error' => $r->response->Message,
                                    '@code' => $r->http_status_code, '@list' => cm_webform_get_lists($lid)),
              WATCHDOG_ERROR);
+    return FALSE;
   }
-  else {
-    watchdog('cm_webform', 'Email @email has been unsubscribed from list "@list" via Campaign Monitor.',
-             array('@email' => $email, '@list' => cm_webform_get_lists($lid)), WATCHDOG_INFO);
-  }
+  
+  watchdog('cm_webform', 'Email @email has been unsubscribed from list "@list" via Campaign Monitor.',
+           array('@email' => $email, '@list' => cm_webform_get_lists($lid)), WATCHDOG_INFO);
+  return TRUE;
 }
 
 /**
