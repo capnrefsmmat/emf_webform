@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Provide Webform component for Campaign Monitor list signups
+ */
 
 /**
  * Implementation of _webform_defaults_component().
