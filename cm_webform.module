@@ -135,7 +135,11 @@ function cm_webform_insert_subscription(&$cm, $lid, $email, $name, $fields) {
 }
 
 /**
- * Checks a given email to see if it was subscribed in Campaign Monitor.
+ * Checks a given email to see if it was subscribed in Campaign Monitor. Warning: includes users
+ * of all statuses, including those marked "Unsubscribed" in Campaign Monitor. Fetch the user's
+ * record and check for "Active" status.
+ *
+ * @todo make this do more of what it says, and only check for Active users
  *
  * @return boolean TRUE if previously subscribed, FALSE if not (or in case of CM error)
  */
