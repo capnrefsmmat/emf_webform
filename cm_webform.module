@@ -361,6 +361,7 @@ function cm_webform_help($path, $arg) {
       
       $h .= '<p>' . t('That\'s it! When a list subscriber enters their email address on the first page of the form and proceeds to the next page, it will automatically be filled in with their information from Campaign Monitor. When they change details or uncheck the "subscribe" checkbox, the updates will be synced with Campaign Monitor automatically. If you add multiple list signup fields, their subscriptions to multiple mailing lists can be edited simultaneously!') . '</p>';
       $h .= '<p>' . t('You might choose to link to this page from your email campaigns, so users can edit their information directly from your site, rather than unsubscribing through a Campaign Monitor branded form.') . '</p>';
+      $h .= '<p>' . t('<strong>Warning:</strong> By default, Campaign Monitor unsubscribes a user from <em>all</em> of your lists if they unsubscribe from only one. If you\'d like the user to be able to subscribe and unsubscribe from multiple lists freely, find the "Unsubscribe settings" page in your list settings and adjust the unsubscribe behavior to only unsubscribe them from the specified list.') . '</p>';
       break;
     
     case 'node/%/webform':
