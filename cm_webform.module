@@ -343,7 +343,7 @@ function cm_webform_help($path, $arg) {
       $h .= '<li>' . t('Create a Webform that asks for whatever information you might want from the user. Be sure to include an email field for their email address.') . '</li>';
       $h .= '<li>' . t('Add a "Campaign Monitor list signup" component to the form. Label it whatever you want; the label will be displayed next to the opt-in checkbox, so make it something like "Subscribe to our newsletter".') . '</li>';
       $h .= '<li>' . t('Choose the Campaign Monitor mailing list you want the user to be signed up for if they check the box.') . '</li>';
-      $h .= '<li>' . t('Select which fields will be used as the user\'s name and email address. Also check which other custom fields should be sent to Campaign Monitor; their field keys (in parentheses) should correspond to Campaign Monitor\'s custom fields directly for them to work correctly.') . '</li>';
+      $h .= '<li>' . t("Select which fields will be used as the user's name and email address. Also check which other custom fields should be sent to Campaign Monitor; their field keys (in parentheses) should correspond to Campaign Monitor's custom fields directly for them to work correctly.") . '</li>';
       $h .= '<li>' . t('Save the component and arrange your form as you\'d like it. If you want the user to be able to subscribe to other lists with the same form, just add another "Campaign Monitor list signup" component.') . '</li>';
       $h .= '</ol>';
       
@@ -351,7 +351,7 @@ function cm_webform_help($path, $arg) {
       
       $h .= '<h3>' . t('Editing subcriptions') . '</h3>';
       $h .= '<p>' . t('Logged-in users will see a "You have already submitted this form. View your previous submissions" link at the top of any Webform they\'ve previously submitted, and they may edit their submissions from there. Should they change their email address, any custom fields, or their subscription status on a Campaign Monitor form, their subscription information will be automatically changed in Campaign Monitor.') . '</p>';
-      $h .= '<p>' . t('If you\'d like guests to be able to edit their subscriptions, you can create a special Webform to do it. Here\'s how:') . '</p>';
+      $h .= '<p>' . t("If you'd like guests to be able to edit their subscriptions, you can create a special Webform to do it. Here's how:") . '</p>';
       
       $h .= '<ol>';
       $h .= '<li>' . t('Create a new Webform. Make an email component as the very first component, and add a "Page break" component directly after it.') . '</li>';
