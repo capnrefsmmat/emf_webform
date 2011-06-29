@@ -212,7 +212,7 @@ function cm_webform_unsubscribe(&$cm, $lname, $email) {
 /**
  * Checks a given email to see if it was subscribed in Campaign Monitor.
  *
- * @return mixed status string if currently subscribed, FALSE if not (or in case of CM error)
+ * @return mixed status string if currently in Campaign Monitor, FALSE if not (or in case of CM error)
  *         Valid status strings:
  *         - Active
  *         - Unsubscribed
