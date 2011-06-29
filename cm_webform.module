@@ -233,7 +233,7 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
           $r = $cm->get($email);
           
           // If they're not subscribed to this list, skip to the next
-          if (!$r->was_successful()) {
+          if (!$r->was_successful() || $r->response->State != 'Active') {
             continue;
           }
           
