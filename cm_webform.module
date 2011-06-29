@@ -62,6 +62,8 @@ function cm_webform_webform_component_info() {
  *
  *  This system also supports subscribing to multiple mailing lists by adding multiple cm_signup
  *  components to the webform.
+ *
+ *  @todo Handle possibility of unsubscribed users editing their data anyway.
  */
 function cm_webform_webform_submission_presave($node, $submission) {
   $cm = new CS_REST_Subscribers('', variable_get('cm_apikey', ''), 'https');
@@ -96,11 +98,13 @@ function cm_webform_webform_submission_presave($node, $submission) {
       $original_email = ($r !== FALSE) ? $r['data'] : $email;
       $wantsToSubscribe = ($submission->data[$cid]['value'][0] == 1);
       $listName = cm_webform_get_lists($list);
+      $subscriptionStatus = cm_webform_subscription_status($cm, $original_email);
       
-      // They may have not checked "subscribe" the first time around but want to subscribe now.
-      if (cm_webform_is_subscribed($cm, $original_email)) {
-        // Check if they even want to subscribe. If they don't, unsubscribe them if necessary
-        if ($wantsToSubscribe) {
+      // If they're active and want to edit or unsubscribe, or unsubscribed and want to edit...
+      if ($subscriptionStatus == 'Active' ||
+          ($subscriptionStatus == 'Unsubscribed' && !$wantsToSubscribe)) {
+        // Update their subscription, even if they're unsubscribed
+        if ($wantsToSubscribe || $subscriptionStatus == 'Unsubscribed') {
           $r = cm_webform_update_subscription($cm, $listName, $email, $original_email, $name, $fields);
           if ($r) {
             drupal_set_message(t('Your subscription to the list "@list" has been successfully updated.',
@@ -112,6 +116,7 @@ function cm_webform_webform_submission_presave($node, $submission) {
           }
         }
         else {
+          // They don't want to subcribe and they're currently active, so unsubscribe.
           $r = cm_webform_unsubscribe($cm, $listName, $original_email);
           if ($r) {
             drupal_set_message(t('You have been successfully unsubscribed from the list "@list".',
@@ -124,6 +129,7 @@ function cm_webform_webform_submission_presave($node, $submission) {
         }
       }
       elseif ($wantsToSubscribe) {
+        // They're not subscribed and want to be.
         $r = cm_webform_insert_subscription($cm, $listName, $email, $name, $fields);
         if ($r) {
           drupal_set_message(t('You have been successfully subscribed to the list "@list".',
@@ -206,14 +212,18 @@ function cm_webform_unsubscribe(&$cm, $lname, $email) {
 /**
  * Checks a given email to see if it was subscribed in Campaign Monitor.
  *
- * @return boolean TRUE if currently subscribed, FALSE if not (or in case of CM error)
+ * @return mixed status string if currently subscribed, FALSE if not (or in case of CM error)
+ *         Valid status strings:
+ *         - Active
+ *         - Unsubscribed
+ *         - Deleted
  */
-function cm_webform_is_subscribed(&$cm, $email) {
+function cm_webform_subscription_status(&$cm, $email) {
   $r = $cm->get($email);
-  if (!$r->was_successful() || $r->response->State != 'Active') {
+  if (!$r->was_successful()) {
     return FALSE;
   }
-  return TRUE;
+  return $r->response->State;
 }
 
 /**
@@ -231,7 +241,7 @@ function cm_webform_webform_submission_delete($node, $submission) {
       // Field containing email address is based on the component configuration
       $email = $submission->data[$component['extra']['email_field']]['value'][0];
       
-      if (cm_webform_is_subscribed($email)) {
+      if (cm_webform_subscription_status($email) != 'Unsubscribed') {
         cm_webform_unsubscribe($cm, $list, $email);
       }
     }
