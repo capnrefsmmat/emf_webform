@@ -145,13 +145,14 @@ function cm_webform_is_subscribed(&$cm, $email) {
 }
 
 /**
- * Helper function to update a subscription in Campaign Monitor.
+ * Helper function to update a subscription in Campaign Monitor. Warning: Will resubscribe the user
+ * if they've previously unsubscribed. Use only when they've checked the box to subscribe explicitly.
  */
 function cm_webform_update_subscription(&$cm, $lid, $email, $original_email, $name, $fields) {
   // Update the selected subscription
   $r = $cm->update($original_email, array('EmailAddress' => $email,
                                           'Name' => $name,
-                                          'Resubscribe' => FALSE,
+                                          'Resubscribe' => TRUE,
                                           'CustomFields' => $fields));
   
   if (!$r->was_successful()) {
