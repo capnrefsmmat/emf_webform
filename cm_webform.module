@@ -265,8 +265,8 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
           $cm = new CS_REST_Subscribers($component['extra']['lists'], variable_get('cm_apikey', ''), 'https');
           $r = $cm->get($email);
           
-          // If they're not subscribed to this list, skip to the next
-          if (!$r->was_successful() || $r->response->State != 'Active') {
+          // If they're not in Campaign Monitor's lists, skip this list
+          if (!$r->was_successful()) {
             continue;
           }
           
@@ -288,7 +288,11 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
             }
           }
           
-          $form_state['webform']['component_tree']['children'][$cid]['value'] = '1';
+          // We fill in the field data even for users listed as "unsubscribed," but we should only check
+          // the subscription box for those who are currently active.
+          if ($r->response->State == 'Active') {
+            $form_state['webform']['component_tree']['children'][$cid]['value'] = '1';
+          }
         }
       }
     }
