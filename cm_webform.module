@@ -357,7 +357,7 @@ function cm_webform_help($path, $arg) {
       $h .= '<li>' . t('Create a Webform that asks for whatever information you might want from the user. Be sure to include an email field for their email address.') . '</li>';
       $h .= '<li>' . t('Add a "Campaign Monitor list signup" component to the form. Label it whatever you want; the label will be displayed next to the opt-in checkbox, so make it something like "Subscribe to our newsletter".') . '</li>';
       $h .= '<li>' . t('Choose the Campaign Monitor mailing list you want the user to be signed up for if they check the box.') . '</li>';
-      $h .= '<li>' . t("Select which fields will be used as the user's name and email address. Also check which other custom fields should be sent to Campaign Monitor; their field keys (in parentheses) should correspond to Campaign Monitor's custom fields directly for them to work correctly.") . '</li>';
+      $h .= '<li>' . t("Select which fields will be used as the user's name and email address. Also check which other custom fields should be sent to Campaign Monitor; their field keys (shown in parentheses) must correspond to Campaign Monitor's custom field names directly.") . '</li>';
       $h .= '<li>' . t('Save the component and arrange your form as you\'d like it. If you want the user to be able to subscribe to other lists with the same form, just add another "Campaign Monitor list signup" component.') . '</li>';
       $h .= '</ol>';
       
@@ -375,7 +375,7 @@ function cm_webform_help($path, $arg) {
       
       $h .= '<p>' . t('That\'s it! When a list subscriber enters their email address on the first page of the form and proceeds to the next page, it will automatically be filled in with their information from Campaign Monitor. When they change details or uncheck the "subscribe" checkbox, the updates will be synced with Campaign Monitor automatically. If you add multiple list signup fields, their subscriptions to multiple mailing lists can be edited simultaneously!') . '</p>';
       $h .= '<p>' . t('You might choose to link to this page from your email campaigns, so users can edit their information directly from your site, rather than unsubscribing through a Campaign Monitor branded form.') . '</p>';
-      $h .= '<p>' . t('<strong>Warning:</strong> By default, Campaign Monitor unsubscribes a user from <em>all</em> of your lists if they unsubscribe from only one. If you\'d like the user to be able to subscribe and unsubscribe from multiple lists freely, find the "Unsubscribe settings" page in your list settings and adjust the unsubscribe behavior to only unsubscribe them from the specified list.') . '</p>';
+      $h .= '<p>' . t('<strong>Warning:</strong> By default, Campaign Monitor unsubscribes a user from <em>all</em> of your lists if they unsubscribe from only one. If you\'d like the user to be able to subscribe and unsubscribe from multiple lists freely, find the "Unsubscribe settings" page in your Campaign Monitor list settings and adjust the unsubscribe behavior to only unsubscribe them from the specified list.') . '</p>';
       break;
     
     case 'node/%/webform':
