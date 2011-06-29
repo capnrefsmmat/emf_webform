@@ -101,7 +101,7 @@ function cm_webform_webform_submission_presave($node, $submission) {
       if (cm_webform_is_subscribed($cm, $original_email)) {
         // Check if they even want to subscribe. If they don't, unsubscribe them if necessary
         if ($wantsToSubscribe) {
-          $r = cm_webform_update_subscription($cm, $list, $email, $original_email, $name, $fields);
+          $r = cm_webform_update_subscription($cm, $listName, $email, $original_email, $name, $fields);
           if ($r) {
             drupal_set_message(t('Your subscription to the list "@list" has been successfully updated.',
                                  array('@list' => $listName)), 'status');
@@ -112,7 +112,7 @@ function cm_webform_webform_submission_presave($node, $submission) {
           }
         }
         else {
-          $r = cm_webform_unsubscribe($cm, $list, $original_email);
+          $r = cm_webform_unsubscribe($cm, $listName, $original_email);
           if ($r) {
             drupal_set_message(t('You have been successfully unsubscribed from the list "@list".',
                                  array('@list' => $listName)), 'status');
@@ -124,7 +124,7 @@ function cm_webform_webform_submission_presave($node, $submission) {
         }
       }
       elseif ($wantsToSubscribe) {
-        $r = cm_webform_insert_subscription($cm, $list, $email, $name, $fields);
+        $r = cm_webform_insert_subscription($cm, $listName, $email, $name, $fields);
         if ($r) {
           drupal_set_message(t('You have been successfully subscribed to the list "@list".',
                                array('@list' => $listName)), 'status');
@@ -139,80 +139,80 @@ function cm_webform_webform_submission_presave($node, $submission) {
 }
 
 /**
- * Helper function to insert a new subscription.
+ * Helper function to insert a new subscription. Warning: Will resubscribe the user
+ * if they've previously unsubscribed. Use only when they've checked the box to subscribe explicitly.
  */
-function cm_webform_insert_subscription(&$cm, $lid, $email, $name, $fields) {
+function cm_webform_insert_subscription(&$cm, $lname, $email, $name, $fields) {
   $r = $cm->add(array('EmailAddress' => $email,
                       'Name' => $name,
-                      'Resubscribe' => FALSE,
+                      'Resubscribe' => TRUE,
                       'CustomFields' => $fields));
   
   if (!$r->was_successful()) {
     watchdog('cm_webform', 'A Campaign Monitor @code error occurred when subscribing @email to list "@list": @error',
              array('@email' => $email, '@error' => $r->response->Message,
-                   '@code' => $r->http_status_code, '@list' => cm_webform_get_lists($lid)),
+                   '@code' => $r->http_status_code, '@list' => $lname),
              WATCHDOG_ERROR);
     return FALSE;
   }
   
   watchdog('cm_webform', 'Email @email has been subscribed to list "@list" via Campaign Monitor.',
-           array('@email' => $email, '@list' => cm_webform_get_lists($lid)), WATCHDOG_INFO);
+           array('@email' => $email, '@list' => $lname), WATCHDOG_INFO);
   return TRUE;
 }
 
-/**
- * Checks a given email to see if it was subscribed in Campaign Monitor. Warning: includes users
- * of all statuses, including those marked "Unsubscribed" in Campaign Monitor. Fetch the user's
- * record and check for "Active" status.
- *
- * @todo make this do more of what it says, and only check for Active users
- *
- * @return boolean TRUE if previously subscribed, FALSE if not (or in case of CM error)
- */
-function cm_webform_is_subscribed(&$cm, $email) {
-  $r = $cm->get($email);
-  return ($r->was_successful());
-}
 
 /**
- * Helper function to update a subscription in Campaign Monitor. Warning: Will resubscribe the user
- * if they've previously unsubscribed. Use only when they've checked the box to subscribe explicitly.
+ * Helper function to update a subscription in Campaign Monitor. 
  */
-function cm_webform_update_subscription(&$cm, $lid, $email, $original_email, $name, $fields) {
+function cm_webform_update_subscription(&$cm, $lname, $email, $original_email, $name, $fields) {
   // Update the selected subscription
   $r = $cm->update($original_email, array('EmailAddress' => $email,
                                           'Name' => $name,
-                                          'Resubscribe' => TRUE,
+                                          'Resubscribe' => FALSE,
                                           'CustomFields' => $fields));
   
   if (!$r->was_successful()) {
     watchdog('cm_webform', 'A Campaign Monitor @code error occurred when updating the subscription of @email to list "@list": @error',
                              array('@email' => $original_email, '@error' => $r->response->Message,
-                                   '@code' => $r->http_status_code, '@list' => cm_webform_get_lists($lid)),
+                                   '@code' => $r->http_status_code, '@list' => $lname),
              WATCHDOG_ERROR);
     return FALSE;
   }
   
   watchdog('cm_webform', 'Email @email has had its subscription to list "@list" updated via Campaign Monitor.',
-           array('@email' => $original_email, '@list' => cm_webform_get_lists($lid)), WATCHDOG_NOTICE);
+           array('@email' => $original_email, '@list' => $lname), WATCHDOG_NOTICE);
   return TRUE;
 }
 
 /**
  * Helper function to unsubscribe a user through Campaign Monitor.
  */
-function cm_webform_unsubscribe(&$cm, $lid, $email) {
+function cm_webform_unsubscribe(&$cm, $lname, $email) {
   $r = $cm->unsubscribe($email);
   if (!$r->was_successful()) {
     watchdog('cm_webform', 'A Campaign Monitor @code error occurred when unsubscribing @email from list "@list": @error',
                              array('@email' => $email, '@error' => $r->response->Message,
-                                   '@code' => $r->http_status_code, '@list' => cm_webform_get_lists($lid)),
+                                   '@code' => $r->http_status_code, '@list' => $lname),
              WATCHDOG_ERROR);
     return FALSE;
   }
   
   watchdog('cm_webform', 'Email @email has been unsubscribed from list "@list" via Campaign Monitor.',
-           array('@email' => $email, '@list' => cm_webform_get_lists($lid)), WATCHDOG_INFO);
+           array('@email' => $email, '@list' => $lname), WATCHDOG_INFO);
+  return TRUE;
+}
+
+/**
+ * Checks a given email to see if it was subscribed in Campaign Monitor. 
+ *
+ * @return boolean TRUE if currently subscribed, FALSE if not (or in case of CM error)
+ */
+function cm_webform_is_subscribed(&$cm, $email) {
+  $r = $cm->get($email);
+  if (!$r->was_successful() || $r->response->State != 'Active') {
+    return FALSE;
+  }
   return TRUE;
 }
 
