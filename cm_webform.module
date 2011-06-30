@@ -308,7 +308,8 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
     }
     
     if (!$emailFound) {
-      form_set_error($component['extra']['email_field'], t('The email address you entered is not subscribed to this mailing list.'));
+      drupal_set_message(t('The email address you provided is not currently subscribed to our mailing list, but you may choose to subscribe by filling out the form below.'),
+                         'warning');
     }
   }
 }
