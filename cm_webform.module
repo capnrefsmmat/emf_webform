@@ -102,20 +102,8 @@ function cm_webform_webform_submission_presave($node, $submission) {
       
       // If they're active and want to edit or unsubscribe, or unsubscribed and want to edit...
       if ($subscriptionStatus == 'Active' ||
-          ($subscriptionStatus == 'Unsubscribed' && !$wantsToSubscribe)) {
-        // Update their subscription, even if they're unsubscribed
-        if ($wantsToSubscribe || $subscriptionStatus == 'Unsubscribed') {
-          $r = cm_webform_update_subscription($cm, $listName, $email, $original_email, $name, $fields);
-          if ($r) {
-            drupal_set_message(t('Your subscription to the list "@list" has been successfully updated.',
-                                 array('@list' => $listName)), 'status');
-          }
-          else {
-            drupal_set_message(t('An error occurred when updating your subscription to "@list". Please try again.',
-                                 array('@list' => $listName)), 'error');
-          }
-        }
-        else {
+          ($subscriptionStatus != 'Active' && !$wantsToSubscribe)) {
+        if (!$wantsToSubscribe && $subscriptionStatus == 'Active') {
           // They don't want to subcribe and they're currently active, so unsubscribe.
           $r = cm_webform_unsubscribe($cm, $listName, $original_email);
           if ($r) {
@@ -126,6 +114,16 @@ function cm_webform_webform_submission_presave($node, $submission) {
             drupal_set_message(t('An error occurred when trying to unsubscribe you from the list "@list". Please try again.',
                                  array('@list' => $listName)), 'error');
           }
+        }
+        // Update their subscription, even if they're unsubscribed
+        $r = cm_webform_update_subscription($cm, $listName, $email, $original_email, $name, $fields);
+        if ($r) {
+          drupal_set_message(t('Your subscription to the list "@list" has been successfully updated.',
+                               array('@list' => $listName)), 'status');
+        }
+        else {
+          drupal_set_message(t('An error occurred when updating your subscription to "@list". Please try again.',
+                               array('@list' => $listName)), 'error');
         }
       }
       elseif ($wantsToSubscribe) {
