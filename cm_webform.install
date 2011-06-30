@@ -1,0 +1,30 @@
+<?php
+/**
+ * @file
+ * Provide install hooks and nuke our variables on uninstallation.
+ */
+
+/**
+ * Implements hook_install() to notify user of successful installation.
+ */
+function cm_install() {
+  drupal_set_message(st('The Campaign Monitor module has been successfully installed. Configure it in the !link.',
+                        array('!link' => l('HubSpot integration settings', 'admin/settings/cm'))), 'status');
+}
+
+/**
+ * Implements hook_uninstall() to remove our saved variables and all traces of the cm_webform component
+ */
+function cm_uninstall() {
+  variable_del('cm_apikey');
+  variable_del('cm_clientid');
+  
+  db_query("DELETE FROM {webform_component} WHERE `type` = 'cm_webform'");
+}
+
+/**
+ * Implements hook_disable() to warn of possible errors with Campaign Monitor webforms.
+ */
+function cm_disable() {
+  drupal_set_message(st('With the Campaign Monitor module disabled, you may experience errors viewing and editing your Campaign Monitor-enabled forms. Delete the "Campaign Monitor list signup" fields or uninstall this module entirely to clear the errors.'), 'warning');
+}
