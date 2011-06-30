@@ -217,6 +217,9 @@ function cm_webform_unsubscribe(&$cm, $lname, $email) {
  *         - Active
  *         - Unsubscribed
  *         - Deleted
+ *         - Bounced
+ *         - Unconfirmed
+ *         - Suppressed
  */
 function cm_webform_subscription_status(&$cm, $email) {
   $r = $cm->get($email);
