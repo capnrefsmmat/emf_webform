@@ -115,7 +115,7 @@ function cm_webform_webform_submission_presave($node, $submission) {
                                  array('@list' => $listName)), 'error');
           }
         }
-        elseif ($subscriptionStatus !== FALSE) {
+        if ($subscriptionStatus !== FALSE) {
           // Update their subscription, even if they're unsubscribed
           $r = cm_webform_update_subscription($cm, $listName, $email, $original_email, $name, $fields);
           if ($r) {
