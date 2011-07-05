@@ -262,8 +262,10 @@ function cm_webform_webform_submission_delete($node, $submission) {
 function cm_webform_form_alter($form, &$form_state, $form_id) {
   if (isset($form_state['webform']) && !empty($form_state['post'])) {
     $emailFound = FALSE;
+    $cmFieldExists = FALSE;
     foreach ($form_state['webform']['component_tree']['children'] as $cid => $component) {
       if ($component['type'] == 'cm_signup') {
+        $cmFieldExists = TRUE;
         
         // Check that the complete form hasn't been submitted.
         if (isset($form_state['post']['submitted'][$component['form_key']])) {
@@ -310,7 +312,7 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
       }
     }
     
-    if (!$emailFound) {
+    if ($cmFieldExists && !$emailFound) {
       drupal_set_message(t('The email address you provided is not currently subscribed to our mailing list, but you may choose to subscribe by filling out the form below.'),
                          'warning');
     }
