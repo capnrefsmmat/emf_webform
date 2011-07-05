@@ -27,7 +27,7 @@ function cm_webform_menu() {
 }
 
 /**
- * Implements of hook_webform_component_info().
+ * Implements hook_webform_component_info().
  */
 function cm_webform_webform_component_info() {
   $components = array();
@@ -52,7 +52,7 @@ function cm_webform_webform_component_info() {
 }
 
 /**
- * Implementation of hook_webform_submission_presave().
+ * Implements hook_webform_submission_presave().
  *
  * There's three possibilities here:
  *  1. The user is filling out the webform for the first time and is creating a new subscription.
@@ -230,7 +230,7 @@ function cm_webform_subscription_status(&$cm, $email) {
 }
 
 /**
- * Implementation of hook_webform_submission_delete().
+ * Implements hook_webform_submission_delete().
  */
 function cm_webform_webform_submission_delete($node, $submission) {
   $cm = new CS_REST_Subscribers('', variable_get('cm_apikey', ''), 'https');
