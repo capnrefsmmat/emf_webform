@@ -26,5 +26,17 @@ function cm_webform_admin_settings() {
     '#description' => t('This can be found in Campaign Monitor under "Client Settings" as "API Client ID".'),
   );
   
+  $form['cmui'] = array(
+    '#title' => t('Campaign Monitor User Interface Settings'),
+    '#type' => 'fieldset',
+  );
+  
+  $form['cmui']['cm_showmsg'] = array(
+    '#title' => t('Show successful subscription message'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('cm_showmsg', 0),
+    '#description' => t('Show users a "You have been successfully subscribed" message when they subscribe. Disable if you have a custom landing page. Unsubscriptions and subscription edits will still result in a message.')
+  );
+  
   return system_settings_form($form);
 }

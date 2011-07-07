@@ -131,13 +131,18 @@ function cm_webform_webform_submission_presave($node, $submission) {
       elseif ($wantsToSubscribe) {
         // They're not subscribed and want to be.
         $r = cm_webform_insert_subscription($cm, $listName, $email, $name, $fields);
-        if ($r) {
-          drupal_set_message(t('You have been successfully subscribed to the list "@list".',
-                               array('@list' => $listName)), 'status');
-        }
-        else {
-          drupal_set_message(t('An error occurred when subscribing you to the list "@list". Please try again.',
-                               array('@list' => $listName)), 'error');
+        
+        // Only show success message if (a) they're updating previous subscription settings or
+        // (b) the admin has said we should
+        if ($email != $original_email || variable_get('cm_showmsg', 0)) {
+          if ($r) {
+            drupal_set_message(t('You have been successfully subscribed to the list "@list".',
+                                 array('@list' => $listName)), 'status');
+          }
+          else {
+            drupal_set_message(t('An error occurred when subscribing you to the list "@list". Please try again.',
+                                 array('@list' => $listName)), 'error');
+          }
         }
       }
     }
