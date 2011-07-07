@@ -4,9 +4,6 @@
  * Integrate with Campaign Monitor to create new subscribers via webform
  */
 
-
-require_once libraries_get_path('createsend-php') . '/csrest_subscribers.php';
-
 /**
  * Implements hook_menu() to get the config page listed
  */
@@ -66,6 +63,7 @@ function cm_webform_webform_component_info() {
  *  @todo Handle possibility of unsubscribed users editing their data anyway.
  */
 function cm_webform_webform_submission_presave($node, $submission) {
+  require_once libraries_get_path('createsend-php') . '/csrest_subscribers.php';
   $cm = new CS_REST_Subscribers('', variable_get('cm_apikey', ''), 'https');
   
   foreach ($node->webform['components'] as $cid => $component) {
@@ -238,6 +236,7 @@ function cm_webform_subscription_status(&$cm, $email) {
  * Implements hook_webform_submission_delete().
  */
 function cm_webform_webform_submission_delete($node, $submission) {
+  require_once libraries_get_path('createsend-php') . '/csrest_subscribers.php';
   $cm = new CS_REST_Subscribers('', variable_get('cm_apikey', ''), 'https');
   
   foreach ($node->webform['components'] as $cid => $component) {
@@ -265,6 +264,8 @@ function cm_webform_webform_submission_delete($node, $submission) {
  * user is subscribed to all of them.
  */
 function cm_webform_form_alter($form, &$form_state, $form_id) {
+  require_once libraries_get_path('createsend-php') . '/csrest_subscribers.php';
+  
   if (isset($form_state['webform']) && !empty($form_state['post'])) {
     $emailFound = FALSE;
     $cmFieldExists = FALSE;
