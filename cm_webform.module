@@ -75,6 +75,12 @@ function cm_webform_webform_submission_presave($node, $submission) {
       // Field containing email address is based on the component configuration
       $email = $submission->data[$component['extra']['email_field']]['value'][0];
       
+      $wantsToSubscribe = ($submission->data[$cid]['value'][0] == 1);
+      if ($wantsToSubscribe && empty($email)) {
+        // If they didn't specify an email address, don't bother sending it to Campaign Monitor.
+        continue;
+      }
+      
       if (!empty($submission->data[$component['extra']['name_field']]['value'])) {
         $name = $submission->data[$component['extra']['name_field']]['value'][0];
       }
@@ -94,7 +100,6 @@ function cm_webform_webform_submission_presave($node, $submission) {
                                    $submission->sid, $component['extra']['email_field']));
       
       $original_email = ($r !== FALSE) ? $r['data'] : $email;
-      $wantsToSubscribe = ($submission->data[$cid]['value'][0] == 1);
       $listName = cm_webform_get_lists($list);
       $subscriptionStatus = cm_webform_subscription_status($cm, $original_email);
       
