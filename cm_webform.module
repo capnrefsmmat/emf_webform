@@ -279,7 +279,7 @@ function cm_webform_form_alter($form, &$form_state, $form_id) {
         $cmFieldExists = TRUE;
         
         // Check that the complete form hasn't been submitted.
-        if (isset($form_state['post']['submitted'][$component['form_key']])) {
+        if ($form_state['post']['details']['page_num'] == $form_state['post']['details']['page_count']) {
           return;
         }
         
