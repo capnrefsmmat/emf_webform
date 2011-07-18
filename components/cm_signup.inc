@@ -90,6 +90,13 @@ function _webform_edit_cm_signup($component) {
     '#required' => FALSE,
   );
   
+  $form['extra']['unsubscribe'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Unsubscribe if unchecked'),
+    '#default_value' => (isset($component['extra']['unsubscribe'])) ? $component['extra']['unsubscribe'] : FALSE,
+    '#description' => t("Unsubscribe users if they don't check the box. Use this for 'edit my subscription' forms."),
+  );
+  
   return $form;
 }
 
