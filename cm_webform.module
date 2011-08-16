@@ -90,11 +90,32 @@ function cm_webform_webform_submission_presave($node, $submission) {
       
       $fields = array();
       $custom_fields = array_keys(array_filter($component['extra']['custom_fields']));
-      foreach ($custom_fields as $field) {
-        $fields[] = array('Key' => $node->webform['components'][$field]['form_key'],
-                          'Value' => $submission->data[$field]['value'][0]);
-      }
       
+      foreach ($custom_fields as $field) {
+        if ($node->webform['components'][$field]['type'] == "select") {
+          $itemLines = explode("\n", $node->webform['components'][$field]['extra']['items']);
+          $items = array();
+          foreach ($itemLines as $item) {
+            $item = explode('|', $item);
+            if (count($item) < 2) {
+              continue;
+            }
+            $items[$item[0]] = trim($item[1]);
+          }
+          $value = array();
+          foreach ($submission->data[$field]['value'] as $val => $val) {
+            $value[] = $items[$val];
+          }
+          $value = implode(',', $value);
+          $fields[] = array('Key' => $node->webform['components'][$field]['form_key'],
+                            'Value' => $value);
+        }
+        else {
+          $fields[] = array('Key' => $node->webform['components'][$field]['form_key'],
+                            'Value' => $submission->data[$field]['value'][0]);
+        }
+      }
+
       // Determine whethere they have a previous submission (case 2)
       $r = db_fetch_array(db_query("SELECT `data` FROM {webform_submitted_data} WHERE sid = %d AND cid = %d",
                                    $submission->sid, $component['extra']['email_field']));
