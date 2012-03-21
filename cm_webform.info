@@ -1,6 +1,8 @@
 name = Campaign Monitor Webform Integration
 description = Add Campaign Monitor list subscriptions to webforms.
-core = 6.x
+core = 7.x
 dependencies[] = libraries
 dependencies[] = webform
 php = 5.0
+files[] = cm_webform.module
+files[] = cm_webform.admin.inc

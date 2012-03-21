@@ -10,8 +10,8 @@
 function cm_webform_menu() {
   $items = array();
 
-  $items['admin/settings/cm'] = array(
-    'title' => 'Campaign Monitor settings',
+  $items['admin/config/services/cm_webform'] = array(
+    'title' => 'Campaign Monitor Webform',
     'description' => 'Set up Campaign Monitor Webform integration.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('cm_webform_admin_settings'),

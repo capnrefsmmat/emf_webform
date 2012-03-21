@@ -46,8 +46,8 @@ function _webform_edit_cm_signup($component) {
   $email_fields = array();
   $name_fields = array();
   $other_fields = array();
-  $result = db_query('SELECT cid, form_key, name, type FROM {webform_component} WHERE type <> "cm_signup" AND nid = %d ORDER BY weight, name', $component['nid']);
-  while ($c = db_fetch_array($result)) {
+  $result = db_query("SELECT cid, form_key, name, type FROM {webform_component} WHERE type<>'cm_signup' AND nid = :nid ORDER BY weight, name", array(':nid' => $component['nid']));
+  while ($c = $result->fetchAssoc()) {
     if ($c['type'] == 'email') {
       $email_fields[$c['cid']] = sprintf('%s (%s)', $c['name'], $c['form_key']);
     }
