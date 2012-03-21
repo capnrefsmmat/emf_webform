@@ -117,8 +117,9 @@ function cm_webform_webform_submission_presave($node, $submission) {
       }
 
       // Determine whethere they have a previous submission (case 2)
-      $r = db_fetch_array(db_query("SELECT `data` FROM {webform_submitted_data} WHERE sid = %d AND cid = %d",
-                                   $submission->sid, $component['extra']['email_field']));
+      $result = db_query("SELECT 'data' FROM {webform_submitted_data} WHERE sid = :sid AND cid = :cid",
+                                   array(':sid' => $submission->sid, ':cid' => $component['extra']['email_field']));
+      $r = $result->fetchAssoc();
       
       $original_email = ($r !== FALSE) ? $r['data'] : $email;
       $listName = cm_webform_get_lists($list);
