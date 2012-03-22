@@ -9,7 +9,7 @@
  */
 function cm_install() {
   drupal_set_message(st('The Campaign Monitor module has been successfully installed. Configure it in the !link.',
-                        array('!link' => l('HubSpot integration settings', 'admin/settings/cm'))), 'status');
+                        array('!link' => l('Campaign monitor integration settings', 'admin/settings/cm'))), 'status');
 }
 
 /**
